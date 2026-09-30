@@ -4,9 +4,9 @@ from datetime import date
 from data import load_expenses, save_expenses
 
 
-# -----------------------------
+# ============================================================
 # PAGE CONFIGURATION
-# -----------------------------
+# ============================================================
 
 st.set_page_config(
     page_title="Expense Tracker",
@@ -15,29 +15,30 @@ st.set_page_config(
 )
 
 
-# -----------------------------
-# LOAD DATA
-# -----------------------------
+# ============================================================
+# LOAD EXPENSE DATA
+# ============================================================
 
 expenses = load_expenses()
 
 
-# -----------------------------
-# TITLE
-# -----------------------------
+# ============================================================
+# APPLICATION TITLE
+# ============================================================
 
 st.title("💰 Expense Tracker")
 
 st.write(
-    "A simple expense management application using Streamlit and JSON files."
+    "A simple expense management application using "
+    "Python, Streamlit, and JSON."
 )
 
 
-# -----------------------------
-# SIDEBAR
-# -----------------------------
+# ============================================================
+# SIDEBAR NAVIGATION
+# ============================================================
 
-st.sidebar.title("Navigation")
+st.sidebar.title("📌 Navigation")
 
 menu = st.sidebar.radio(
     "Choose an option",
@@ -61,7 +62,7 @@ if menu == "Dashboard":
     total_expenses = len(expenses)
 
     total_amount = sum(
-        expense["amount"]
+        float(expense["amount"])
         for expense in expenses
     )
 
@@ -83,16 +84,18 @@ if menu == "Dashboard":
 
     if expenses:
 
-        st.subheader("Recent Expenses")
+        st.subheader("📌 Recent Expenses")
 
-        for expense in expenses[-5:][::-1]:
+        recent_expenses = expenses[-5:][::-1]
+
+        for expense in recent_expenses:
 
             st.write(
-                f"**{expense['title']}** - "
-                f"₹{expense['amount']:.2f}"
+                f"**{expense['title']}** — "
+                f"₹{float(expense['amount']):.2f}"
             )
 
-            st.write(
+            st.caption(
                 f"Category: {expense['category']} | "
                 f"Date: {expense['date']}"
             )
@@ -102,7 +105,8 @@ if menu == "Dashboard":
     else:
 
         st.info(
-            "No expenses added yet."
+            "No expenses added yet. "
+            "Go to 'Add Expense' to create your first expense."
         )
 
 
@@ -124,7 +128,8 @@ elif menu == "Add Expense":
         amount = st.number_input(
             "Amount",
             min_value=0.0,
-            step=1.0
+            step=1.0,
+            format="%.2f"
         )
 
         category = st.selectbox(
@@ -152,12 +157,12 @@ elif menu == "Add Expense":
         )
 
         submitted = st.form_submit_button(
-            "Add Expense"
+            "💾 Add Expense"
         )
 
         if submitted:
 
-            if not title:
+            if title.strip() == "":
 
                 st.error(
                     "Please enter an expense title."
@@ -172,16 +177,14 @@ elif menu == "Add Expense":
             else:
 
                 new_expense = {
-                    "title": title,
-                    "amount": amount,
+                    "title": title.strip(),
+                    "amount": float(amount),
                     "category": category,
                     "date": str(expense_date),
-                    "description": description
+                    "description": description.strip()
                 }
 
-                expenses.append(
-                    new_expense
-                )
+                expenses.append(new_expense)
 
                 save_expenses(expenses)
 
@@ -206,20 +209,25 @@ elif menu == "Expense Report":
 
     else:
 
-        categories = {}
+        category_totals = {}
 
         for expense in expenses:
 
             category = expense["category"]
 
-            categories[category] = (
-                categories.get(category, 0)
-                + expense["amount"]
+            amount = float(
+                expense["amount"]
             )
 
-        st.subheader("Category-wise Expenses")
+            if category not in category_totals:
 
-        for category, amount in categories.items():
+                category_totals[category] = 0
+
+            category_totals[category] += amount
+
+        st.subheader("📂 Category-wise Expenses")
+
+        for category, amount in category_totals.items():
 
             st.write(
                 f"**{category}:** ₹{amount:.2f}"
@@ -228,14 +236,14 @@ elif menu == "Expense Report":
         st.divider()
 
         total_amount = sum(
-            expense["amount"]
+            float(expense["amount"])
             for expense in expenses
         )
 
-        st.subheader("Total Expense")
+        st.subheader("💰 Total Expense")
 
-        st.write(
-            f"### ₹{total_amount:.2f}"
+        st.success(
+            f"Total Expense: ₹{total_amount:.2f}"
         )
 
 
@@ -264,21 +272,30 @@ elif menu == "Expense List":
                 f"{index}. {expense['title']}"
             )
 
-            st.write(
-                f"**Amount:** ₹{expense['amount']:.2f}"
-            )
+            col1, col2 = st.columns(2)
 
-            st.write(
-                f"**Category:** {expense['category']}"
-            )
+            with col1:
 
-            st.write(
-                f"**Date:** {expense['date']}"
-            )
+                st.write(
+                    f"**Amount:** "
+                    f"₹{float(expense['amount']):.2f}"
+                )
 
-            st.write(
-                f"**Description:** "
-                f"{expense['description']}"
-            )
+                st.write(
+                    f"**Category:** "
+                    f"{expense['category']}"
+                )
+
+            with col2:
+
+                st.write(
+                    f"**Date:** "
+                    f"{expense['date']}"
+                )
+
+                st.write(
+                    f"**Description:** "
+                    f"{expense['description'] or 'No description'}"
+                )
 
             st.divider()
